@@ -1,6 +1,14 @@
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
+namespace: avi-system
+
+# make sure namespace exists
 resources:
-  - repository.yaml
-  - release.yaml
-  - namespace.yaml
+- namespace.yaml
+
+# AVI AKO helm chart
+helmChartInflationGenerator:
+- chartName: ako
+  chartRepoUrl: oci://projects.registry.vmware.com/ako/helm-charts/ako
+  chartVersion: 1.10.3
+  releaseName: ako
+  releaseNamespace: avi-system
+  values: ako-values.yaml
