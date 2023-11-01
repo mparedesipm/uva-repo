@@ -8,7 +8,7 @@ ingress:
   alertmanagerServicePort: 80
 prometheus:
   pvc:
-    storageClassName:
+    storageClassName: vsphere-tanzu
 alertmanager:
   pvc:
-    storageClassName:
+    storageClassName: vsphere-tanzu
