@@ -4,10 +4,10 @@ grafana:
     type: "Opaque"
     admin_password: "Vk13YXJlMSE="
   pvc:
-    storageClassName:
+    storageClassName: vsphere-tanzu
 ingress:
   enabled: true
-  virtual_host_fqdn: "grafana.system.tanzu"
+  virtual_host_fqdn: "grafana-test.k8s.sc.ipm"
   prefix: "/"
   servicePort: 80
 
