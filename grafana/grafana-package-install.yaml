@@ -13,7 +13,7 @@ metadata:
   namespace: packages
 spec:
   packageRef:
-    refName: grafana-test.k8s.sc.ipm
+    refName: grafana.tanzu.vmware.com
     versionSelection:
       constraints: 7.5.17+vmware.1-tkg.1
   serviceAccountName: grafana-packages-sa
