@@ -5,14 +5,14 @@ metadata:
   name: tanzu-packages-contour
   namespace: tanzu-continuousdelivery-resources
 spec:
-  dependsOn:
-    - name: tanzu-packages-cert-manager
+#  dependsOn:
+#    - name: tanzu-packages-cert-manager
   interval: 1m0s
   path: ./contour
   prune: true
   sourceRef:
     kind: GitRepository
-    name: fluxcd-poc
+    name: ako-cluster
     namespace: tanzu-continuousdelivery-resources
   healthChecks:
     - apiVersion: apps/v1
