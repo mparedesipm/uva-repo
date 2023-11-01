@@ -5,13 +5,13 @@ metadata:
   name: tanzu-packages-prometheus-sa
   namespace: tanzu-continuousdelivery-resources
 spec:
-  dependsOn:
-    - name: tanzu-packages-namespaces
+#  dependsOn:
+#    - name: tanzu-packages-namespaces
   interval: 1m0s
   path: ./service-accounts/prometheus-sa
   prune: true
   sourceRef:
     kind: GitRepository
-    name: fluxcd-poc
+    name: ff
  
 
