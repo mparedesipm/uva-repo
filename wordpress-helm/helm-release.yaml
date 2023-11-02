@@ -1,8 +1,8 @@
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
-  name: tmm-wordpress
-  namespace: default
+  name: test-wordpress
+  namespace: wordpress
 spec:
   interval: 1m
   chart:
