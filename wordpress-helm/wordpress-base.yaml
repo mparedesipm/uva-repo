@@ -227,7 +227,7 @@ spec:
       serviceAccountName: default
       containers:
         - name: wordpress
-          image: docker.io/bitnami/wordpress:6.3.2-debian-11-r1
+          image: docker.io/bitnami/wordpress:6.3.1-debian-11-r28
           imagePullPolicy: "IfNotPresent"
           securityContext:
             allowPrivilegeEscalation: false
