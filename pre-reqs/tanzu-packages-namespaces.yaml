@@ -10,7 +10,7 @@ spec:
   prune: true
   sourceRef:
     kind: GitRepository
-    name: ako-cluster
+    name: uva-repo
     namespace: tanzu-continuousdelivery-resources
 
 
