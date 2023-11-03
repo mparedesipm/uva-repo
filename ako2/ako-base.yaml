@@ -1,0 +1,379 @@
+---
+# Source: ako/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ako-sa
+  namespace: default
+---
+# Source: ako/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: avi-secret
+  namespace: default
+type: Opaque
+data:
+  username:
+---
+# Source: ako/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: avi-k8s-config
+  namespace: default
+data:
+  primaryInstance: "true"
+  controllerIP: ""
+  controllerVersion: ""
+  cniPlugin: ""
+  shardVSSize: "LARGE"
+  passthroughShardSize: "SMALL"
+  fullSyncFrequency: "1800"
+  cloudName: "Default-Cloud"
+  clusterName: "my-cluster"
+  servicesAPI: "false"
+  enableEVH: "false"
+  layer7Only: "false"
+  vipPerNamespace: "false"
+  tenantName: "admin"
+  defaultDomain: ""
+  disableStaticRouteSync: "false"
+  defaultIngController: "true"
+  noPGForSNI: "false"
+  enableRHI: "false"
+  nsxtT1LR: ""
+  enableEvents: "true"
+  logLevel: "WARN"
+  deleteConfig: "false"
+  autoFQDN: "default"
+  nsSyncLabelKey: ""
+  nsSyncLabelValue: ""
+  serviceType:  "ClusterIP"
+
+  serviceEngineGroupName:  "Default-Group"
+  bgpPeerLabels: |-
+    []
+  nodeNetworkList: |-
+    []
+  vipNetworkList: |-
+    []
+  apiServerPort: "8080"
+  enableMCI: "false"
+  blockedNamespaceList: |-
+    []
+  ipFamily: ""
+  istioEnabled: "false"
+  useDefaultSecretsOnly: "false"
+---
+# Source: ako/templates/clusterrole.yaml
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: ako-cr
+rules:
+  - apiGroups: [""]
+    resources: ["*"]
+    verbs: ['get','watch','list']
+  - apiGroups: ["apps"]
+    resources: ["statefulsets","statefulsets/status"]
+    verbs: ["get","watch","list","patch","update"]
+  - apiGroups: ["extensions","networking.k8s.io"]
+    resources: ["ingresses","ingresses/status"]
+    verbs: ["get","watch","list","patch","update"]
+  - apiGroups: [""]
+    resources: ["services","services/status"]
+    verbs: ["get","watch","list","patch","update"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get","watch","list","patch","update", "create"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get","watch","list","patch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create","patch","update"]
+  - apiGroups: ["crd.projectcalico.org"]
+    resources: ["blockaffinities"]
+    verbs: ["get","watch","list"]
+  - apiGroups: ["network.openshift.io"]
+    resources: ["hostsubnets"]
+    verbs: ["get","watch","list"]
+  - apiGroups: ["route.openshift.io"]
+    resources: ["routes","routes/status"]
+    verbs: ["get","watch","list","patch","update"]
+  - apiGroups: ["ako.vmware.com"]
+    resources: ["hostrules","hostrules/status","httprules","httprules/status","aviinfrasettings","aviinfrasettings/status", "l4rules", "l4rules/status", "ssorules", "ssorules/status"]
+    verbs: ["get","watch","list","patch","update"]
+  - apiGroups: ["networking.x-k8s.io"]
+    resources: ["gateways","gateways/status","gatewayclasses","gatewayclasses/status"]
+    verbs: ["get","watch","list","patch","update"]
+  - apiGroups: ["ako.vmware.com"]
+    resources: ["multiclusteringresses","serviceimports"]
+    verbs: ["get","watch","list","patch"]
+  - apiGroups: ["ako.vmware.com"]
+    resources: ["multiclusteringresses/status","serviceimports/status"]
+    verbs: ["get","patch"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["create", "get", "update"]
+  - apiGroups: ["cilium.io"]
+    resources: ["ciliumnodes"]
+    verbs: ["get","watch","list"]
+---
+# Source: ako/templates/clusterrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ako-crb
+  labels:
+    chart: ako-1.11.1
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ako-cr
+subjects:
+- kind: ServiceAccount
+  name: ako-sa
+  namespace: default
+---
+# Source: ako/templates/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ako
+  namespace: default
+  labels:
+    helm.sh/chart: ako-1.11.1
+    app.kubernetes.io/name: ako
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "1.11.1"
+    app.kubernetes.io/managed-by: Helm
+spec:
+
+
+  replicas: 1
+  serviceName: ako
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ako
+      app.kubernetes.io/instance: release-name
+  template:
+    metadata:
+
+      labels:
+        app.kubernetes.io/name: ako
+        app.kubernetes.io/instance: release-name
+    spec:
+      serviceAccountName: ako-sa
+      securityContext:
+        {}
+
+      imagePullSecrets:
+        []
+      containers:
+        - name: ako
+
+          securityContext:
+            {}
+          image: "projects.registry.vmware.com/ako/ako:1.11.1"
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh","/var/pre_stop_hook.sh"]
+          env:
+          - name: CTRL_IPADDRESS
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: controllerIP
+          - name: CTRL_VERSION
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: controllerVersion
+          - name: CNI_PLUGIN
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: cniPlugin
+          - name: ISTIO_ENABLED
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: istioEnabled
+          - name: VIP_PER_NAMESPACE
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: vipPerNamespace
+          - name: SHARD_VS_SIZE
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: shardVSSize
+          - name: PASSTHROUGH_SHARD_SIZE
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: passthroughShardSize
+          - name: FULL_SYNC_INTERVAL
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: fullSyncFrequency
+          - name: PRIMARY_AKO_FLAG
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: primaryInstance
+          - name: CLOUD_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: cloudName
+          - name: TENANT_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: tenantName
+          - name: CLUSTER_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: clusterName
+          - name: ENABLE_RHI
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: enableRHI
+          - name: ENABLE_EVH
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: enableEVH
+          - name: SERVICES_API
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: servicesAPI
+          - name: DEFAULT_DOMAIN
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: defaultDomain
+          - name: DISABLE_STATIC_ROUTE_SYNC
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: disableStaticRouteSync
+
+          - name: NAMESPACE_SYNC_LABEL_KEY
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: nsSyncLabelKey
+          - name: NAMESPACE_SYNC_LABEL_VALUE
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: nsSyncLabelValue
+          - name: DEFAULT_ING_CONTROLLER
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: defaultIngController
+          - name: SEG_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: serviceEngineGroupName
+          - name: BGP_PEER_LABELS
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: bgpPeerLabels
+          - name: NODE_NETWORK_LIST
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: nodeNetworkList
+          - name: VIP_NETWORK_LIST
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: vipNetworkList
+          - name: AKO_API_PORT
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: apiServerPort
+          - name: SERVICE_TYPE
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: serviceType
+
+          - name: AUTO_L4_FQDN
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: autoFQDN
+
+          - name: LOG_FILE_PATH
+            value: /log
+          - name: LOG_FILE_NAME
+            value: avi.log
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: MCI_ENABLED
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: enableMCI
+          - name: BLOCKED_NS_LIST
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: blockedNamespaceList
+          - name: IP_FAMILY
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: ipFamily
+          - name: USE_DEFAULT_SECRETS_ONLY
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: useDefaultSecretsOnly
+          resources:
+            limits:
+              cpu: 350m
+              memory: 400Mi
+            requests:
+              cpu: 200m
+              memory: 300Mi
+          livenessProbe:
+            httpGet:
+              path: /api/status
+              port:  8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                - ako
+            topologyKey: "kubernetes.io/hostname"
