@@ -1,7 +1,7 @@
 ---
 ingress:
   enabled: true
-  virtual_host_fqdn: "prometheus-test.k8s.sc.ipm"
+  virtual_host_fqdn: "prometheus-test.uva.es"
   prometheus_prefix: "/"
   alertmanager_prefix: "/alertmanager/"
   prometheusServicePort: 80

@@ -7,7 +7,7 @@ grafana:
     storageClassName: vsphere-tanzu
 ingress:
   enabled: true
-  virtual_host_fqdn: "grafana-test.k8s.sc.ipm"
+  virtual_host_fqdn: "grafana-test.uva.es"
   prefix: "/"
   servicePort: 80
 
